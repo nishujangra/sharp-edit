@@ -1,130 +1,100 @@
-import { useContext, useEffect, useCallback } from 'react';
-import axios from 'axios';
-import { useLocation } from 'react-router-dom';
-import { ImageContext } from '../context/ImageContext';
+// src/pages/ImagePage.tsx
+import React, { useState, useEffect } from 'react';
 import Slider from '../components/Slider';
+import { useLocation } from 'react-router-dom';
+import { manipulateImage } from '../services/imageService';
 
-const ImagePage = () => {
+const ImagePage: React.FC = () => {
     const location = useLocation();
-    const {
-        imageUrl,
-        setImageUrl,
-        brightness,
-        setBrightness,
-        saturation,
-        setSaturation,
-        rotation,
-        setRotation,
-        format,
-        setFormat,
-    } = useContext(ImageContext) ?? {};
+    const [brightness, setBrightness] = useState(1);
+    const [saturation, setSaturation] = useState(1);
+    const [rotation, setRotation] = useState(0);
 
-    const initialImageUrl = location.state?.imageUrl;
+    const imageUrl = location.state?.imageUrl || '';
 
-    // Initialize the image URL from location state
-    useEffect(() => {
-        const img = 'http://localhost:5000/uploads/' + initialImageUrl;
-        if (setImageUrl) {
-            setImageUrl(img);
-        }
-    }, [initialImageUrl, setImageUrl]);
+    if (!imageUrl) {
+        return <p>No image available</p>;
+    }
 
-    // Function to update the image preview based on current settings
-    const updateImagePreview = useCallback(async () => {
-        if (!imageUrl) return;
-
+    const handleManipulate = async () => {
         try {
-            // Apply brightness
-            console.log(imageUrl);
-            let response = await axios.post(`http://localhost:5000/api/brightness`, {
-                fileName: imageUrl.includes('/uploads/') ? imageUrl.split('/uploads/')[1] : imageUrl,
+
+            const response = await manipulateImage(imageUrl, {
                 brightness,
-            },{
-                responseType: 'arraybuffer'
-            });
-            const base64ImageString = Buffer.from(response.data, 'binary').toString('base64');
-            const base64Image = `data:image/jpeg;base64,${base64ImageString}`;
-            console.log(base64Image);
-            console.log(response.data);
-            if (setImageUrl) {
-                setImageUrl(response.data);
-            }
-
-            // Apply saturation
-            response = await axios.post(`http://localhost:5000/api/saturation`, {
-                fileName: imageUrl.includes('/uploads/') ? imageUrl.split('/uploads/')[1] : imageUrl,
                 saturation,
-            },{
-                responseType: 'arraybuffer'
+                rotation
             });
-            const base64ImageString2 = Buffer.from(response.data, 'binary').toString('base64');
-            const base64Image2 = `data:image/jpeg;base64,${base64ImageString2}`;
-            console.log(base64Image2);
-            if (setImageUrl) {
-                setImageUrl(response.data);
-            }
 
-            // Apply rotation
-            response = await axios.post(`http://localhost:5000/api/rotate`, {
-                fileName: imageUrl.includes('/uploads/') ? imageUrl.split('/uploads/')[1] : imageUrl,
-                rotation,
-            },{
-                responseType: 'arraybuffer'
-            });
-            const base64ImageString3 = Buffer.from(response.data, 'binary').toString('base64');
-            const base64Image3 = `data:image/jpeg;base64,${base64ImageString3}`;
-            console.log(base64Image3);
-            if(setImageUrl) {
-                setImageUrl(response.data);
-            }
+            return response;
         } catch (error) {
-            console.error('Error updating image:', error);
-        }
-    }, [imageUrl, brightness, saturation, rotation, setImageUrl]);
-
-    // Effect to handle real-time image updates when values change
-    useEffect(() => {
-        updateImagePreview();
-    }, [brightness, saturation, rotation, updateImagePreview]);
-
-    // Image format conversion (JPEG/PNG)
-    const handleFormatChange = async (newFormat: string) => {
-        if(!imageUrl) return;
-        try {
-            const response = await axios.post(`http://localhost:5000/api/convert`, {
-                fileName: imageUrl.includes('/uploads/') ? imageUrl.split('/uploads/')[1] : imageUrl,
-                format: newFormat,
-            });
-            if (setImageUrl) {
-                setImageUrl(response.data);
-            }
-            if (setFormat) {
-                setFormat(newFormat);
-            }
-        } catch (error) {
-            console.error('Error converting image:', error);
+            console.error('Error manipulating image:', error);
         }
     };
 
+    const [previewImage, setPreviewImage] = useState<Blob | undefined>(undefined);
+
+    useEffect(() => {
+        const fetchPreviewImage = async () => {
+            const image = await handleManipulate();
+            setPreviewImage(image);
+        };
+
+        fetchPreviewImage();
+        {
+            previewImage ? (
+                <img
+                    src={URL.createObjectURL(previewImage)}
+                    alt="Uploaded Preview"
+                    className="w-full max-h-[50vh] max-w-lg rounded shadow-lg"
+                />
+            ) : (
+                <p className="text-gray-600">No image uploaded yet.</p>
+            )
+        } otation, imageUrl]);
+
     return (
-        <div className="flex flex-col items-center p-6">
-            <h1 className="text-3xl font-bold mb-6">Sharp Edit - Image Editor</h1>
+        <div className="mx-auto p-6">
+            <h2 className="text-4xl text-center font-semibold mb-8">Image Manipulation</h2>
 
             {/* Image Preview */}
-            {imageUrl && <img src={imageUrl} alt="Preview" className="w-full max-w-lg mb-6" />}
+            <div className="flex justify-center mb-6">
+                {previewImage ? (
+                    <img
+                        src={`http://localhost:5000/uploads/${imageUrl}`}
+                        alt="Uploaded Preview"
+                        className="w-full max-h-[50vh] max-w-lg rounded shadow-lg"
+                    />
+                ) : (
+                    <p className="text-gray-600">No image uploaded yet.</p>
+                )}
+            </div>
 
-            {/* Sliders for Brightness, Saturation, and Rotation */}
-            <Slider label="Brightness" value={brightness ?? 1} onChange={setBrightness ?? (() => { })} min={0.1} max={2} step={0.1} />
-            <Slider label="Saturation" value={saturation ?? 1} onChange={setSaturation ?? (() => { })} min={0} max={2} step={0.1} />
-            <Slider label="Rotation" value={rotation ?? 0} onChange={setRotation ?? (() => { })} min={0} max={360} step={1} />
-
-            {/* Format Conversion */}
-            <div className="mt-6">
-                <label className="mr-2 font-semibold">Format:</label>
-                <select value={format} onChange={(e) => handleFormatChange(e.target.value)} className="border rounded p-2">
-                    <option value="jpeg">JPEG</option>
-                    <option value="png">PNG</option>
-                </select>
+            {/* Sliders for Manipulation */}
+            <div className="w-full max-w-lg mx-auto">
+                <Slider
+                    label="Brightness"
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    value={brightness}
+                    onChange={setBrightness}
+                />
+                <Slider
+                    label="Saturation"
+                    min={0.5}
+                    max={2}
+                    step={0.1}
+                    value={saturation}
+                    onChange={setSaturation}
+                />
+                <Slider
+                    label="Rotation"
+                    min={-180}
+                    max={180}
+                    step={1}
+                    value={rotation}
+                    onChange={setRotation}
+                />
             </div>
         </div>
     );

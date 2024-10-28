@@ -96,46 +96,16 @@ Sharp Edit is a full-stack web application that allows users to upload images an
 
 ## API Endpoints
 
-- **POST /api/brightness**
-  - **Description**: Adjusts the brightness of the uploaded image.
+- **POST /api/manipulate**
+  - **Description**: Adjusts the brightness, saturation and rotation of the uploaded image.
   - **Request Body**:
     ```json
     {
       "fileName": "image.jpg",
-      "brightness": 1.2
-    }
-    ```
-  - **Response**: Base64-encoded image data.
-
-- **POST /api/saturation**
-  - **Description**: Adjusts the saturation of the uploaded image.
-  - **Request Body**:
-    ```json
-    {
-      "fileName": "image.jpg",
-      "saturation": 1.5
-    }
-    ```
-  - **Response**: Base64-encoded image data.
-
-- **POST /api/rotate**
-  - **Description**: Rotates the uploaded image.
-  - **Request Body**:
-    ```json
-    {
-      "fileName": "image.jpg",
+      "brightness": 1.2,
+      "saturation": 1.5,
       "rotation": 90
-    }
-    ```
-  - **Response**: Base64-encoded image data.
 
-- **POST /api/convert**
-  - **Description**: Converts the uploaded image to the specified format (JPEG or PNG).
-  - **Request Body**:
-    ```json
-    {
-      "fileName": "image.jpg",
-      "format": "png"
     }
     ```
   - **Response**: Base64-encoded image data.
@@ -161,7 +131,6 @@ Contributions are welcome! Please follow these steps:
 
 For questions or support, please contact [ndjangra1027@gmail.com](mailto:ndjangra1027@gmail.com).
 
-```
 
 ### Key Sections:
 
